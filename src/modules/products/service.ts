@@ -1,5 +1,5 @@
 import { db } from "../../db"
-import { products } from "../../db/schema"
+import { products } from "../../db/schema";
 import { CreateProductsInput } from './model';
 
 export const Products = {
