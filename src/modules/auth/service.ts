@@ -1,13 +1,17 @@
 
-import { eq } from "drizzle-orm";
 import { db } from "../../db";
 import { users } from "../../db/schema";
-import { userRegInput } from "./model";
+import { userLoginInput, userRegInput } from "./model";
 import * as argon2 from "argon2"
 
 export const User = {
+  // register
   async createUser(data: userRegInput) {
-    const [exist] = await db.select().from(users).where(eq(users.email, data.email))
+    const exist = await db.query.users.findFirst({
+      where: {
+        email: data.email
+      }
+    })
 
     if (exist) {
       throw new Error("Email already exist")
@@ -26,5 +30,33 @@ export const User = {
     }).returning({ id: users.id, email: users.email })
 
     return newUser
+  },
+
+  // login
+  async loginUser(data: userLoginInput) {
+    const user = await db.query.users.findFirst({
+      where: {
+        email: data.email
+      }
+    })
+
+    if (!user) {
+      throw new Error("Email atau password salah")
+    }
+
+    if (!user.password) {
+      throw new Error("Silahkan login dengan cara lain")
+    }
+
+    const isValid = await argon2.verify(user.password, data.password)
+
+    if (!isValid) {
+      throw new Error("Email atau password salah")
+    }
+
+    return {
+      id: user.id,
+      email: user.email
+    }
   }
 }

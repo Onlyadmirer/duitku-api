@@ -41,15 +41,32 @@ export const accounts = pgTable(
 
 // 3. Tabel Refresh Tokens (Opsional - Jika menggunakan Refresh Token Rotation)
 export const refreshTokens = pgTable('refresh_tokens', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(), // Foreign key jadi uuid
-  token: text('token').notNull().unique(),
-  deviceInfo: varchar('device_info', { length: 255 }),
-  ipAddress: varchar('ip_address', { length: 50 }),
-  expiresAt: timestamp('expires_at', { mode: 'date', withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { mode: 'date', withTimezone: true })
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, {
+      onDelete: "cascade",
+    }),
+  tokenHash: varchar("token_hash", {
+    length: 64,
+  })
+    .notNull()
+    .unique(),
+  familyId: uuid("family_id").notNull(),
+  expiresAt: timestamp("expires_at", {
+    withTimezone: true,
+    mode: "date",
+  }).notNull(),
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+    mode: "date",
+  })
     .defaultNow()
     .notNull(),
+  revokedAt: timestamp("revoked_at", {
+    withTimezone: true,
+    mode: "date",
+  }),
 });
 
 
