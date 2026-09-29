@@ -20,6 +20,7 @@ export const User = {
     })
 
     const [newUser] = await db.insert(users).values({
+      name: data.name,
       email: data.email,
       password: hashedPass,
     }).returning({ id: users.id, email: users.email })
