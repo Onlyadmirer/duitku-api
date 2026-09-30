@@ -5,7 +5,7 @@ import { accessJwt } from "../plugin/jwt";
 import { generateRefreshToken, hashRefreshToken } from "../utils/refreshToken";
 import { db } from "../../db";
 import { refreshTokens } from "../../db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 
 export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
   .post("/register", async ({ body, set }) => {
@@ -77,6 +77,7 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
   })
   .post("/refresh", async ({
     accessJwt,
+    status,
     cookie: {
       access_token,
       refresh_token, } }) => {
@@ -93,59 +94,108 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
 
     const tokenHash = hashRefreshToken(tokenString)
 
-    const storedToken = await db.query.refreshTokens.findFirst({
-      where: {
-        tokenHash: tokenHash
+    const result = await db.transaction(async (tx) => {
+      const [storedToken] = await tx.update(refreshTokens).set({
+        revokedAt: new Date()
+      }).where(
+        and(
+          eq(refreshTokens.tokenHash, tokenHash),
+          isNull(refreshTokens.revokedAt),
+          gt(refreshTokens.expiresAt, new Date())
+        )
+      ).returning({
+        id: refreshTokens.id,
+        userId: refreshTokens.userId,
+        expiresAt: refreshTokens.expiresAt,
+        familyId: refreshTokens.familyId,
+      })
+
+      if (!storedToken) {
+        return null
+      }
+
+      const newRefreshToken = generateRefreshToken()
+      const newHashedRefresehToken = hashRefreshToken(newRefreshToken)
+
+      await tx.insert(refreshTokens).values({
+        userId: storedToken.userId,
+        tokenHash: newHashedRefresehToken,
+        expiresAt: storedToken.expiresAt,
+        familyId: storedToken.familyId
+      })
+
+      return {
+        storedToken,
+        newRefreshToken
       }
     })
 
-    if (!storedToken) {
+    if (!result) {
 
-      access_token.remove()
-      refresh_token.remove()
-
-      return status(401, {
-        success: false,
-        message: "Refresh token tidak valid"
+      const existingToken = await db.query.refreshTokens.findFirst({
+        where: {
+          tokenHash: tokenHash
+        }
       })
-    }
 
-    if (storedToken.expiresAt <= new Date()) {
-      access_token.remove()
-      refresh_token.remove()
+      if (!existingToken) {
 
-      return status(401, {
-        success: false,
-        message: "Refresh token expired"
-      })
-    }
+        access_token.remove()
+        refresh_token.remove()
 
-    if (storedToken.revokedAt) {
-      await db.update(refreshTokens).set({
-        revokedAt: new Date()
-      })
-        .where(
-          eq(refreshTokens.familyId, storedToken.familyId)
-        )
-
-      refresh_token.remove()
-      access_token.remove()
-
-      return {
-        susccess: false,
-        message: "Refresh token reuse detected"
+        return status(401, {
+          success: false,
+          message: "Token not found"
+        })
       }
+
+      if (existingToken.revokedAt) {
+        await db.update(refreshTokens).set({
+          revokedAt: new Date()
+        })
+          .where(
+            eq(refreshTokens.familyId, existingToken.familyId)
+          )
+
+        refresh_token.remove()
+        access_token.remove()
+
+        return {
+          success: false,
+          message: "Refresh token reuse detected"
+        }
+      }
+
+
+      if (existingToken.expiresAt <= new Date()) {
+        access_token.remove()
+        refresh_token.remove()
+
+        return {
+          success: false,
+          message: "Refresh token expired"
+        }
+      }
+
+      refresh_token.remove()
+      access_token.remove()
+
+      return status(401, {
+        status: false,
+        messsage: "Refresh token tidak valid"
+      })
     }
+
 
     const user = await db.query.users.findFirst({
       where: {
-        id: storedToken.userId
+        id: result.storedToken.userId
       }
     })
 
     if (!user) {
       return status(401, {
-        susccess: false,
+        success: false,
         message: "User not found"
       })
     }
@@ -155,21 +205,7 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
       email: user.email
     })
 
-    const newRefreshToken = generateRefreshToken()
-    const newHashedRefresehToken = hashRefreshToken(newRefreshToken)
-
-    await db.transaction(async (tx) => {
-      await tx.update(refreshTokens).set({
-        revokedAt: new Date()
-      }).where(eq(refreshTokens.id, storedToken.id))
-
-      await tx.insert(refreshTokens).values({
-        userId: storedToken.id,
-        tokenHash: newHashedRefresehToken,
-        expiresAt: storedToken.expiresAt,
-        familyId: storedToken.familyId
-      })
-    })
+    const maxAge = Math.floor(result.storedToken.expiresAt.getTime() - Date.now() / 1000)
 
     access_token.set({
       value: newAccessToken,
@@ -182,16 +218,16 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
 
     // refresh token cookie
     refresh_token.set({
-      value: newHashedRefresehToken,
+      value: result.newRefreshToken,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/auth",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: maxAge,
     })
 
     return {
-      susccess: true,
+      success: true,
       message: "Token refreshed"
     }
 
