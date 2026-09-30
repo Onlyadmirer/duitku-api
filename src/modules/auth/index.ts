@@ -232,3 +232,23 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
     }
 
   })
+  .post("/logout", async ({ cookie: { access_token, refresh_token } }) => {
+    const token = refresh_token.value
+
+    if (token) {
+      const tokenHash = hashRefreshToken(token.toString())
+
+
+      await db.update(refreshTokens).set({
+        revokedAt: new Date()
+      }).where(eq(refreshTokens.tokenHash, tokenHash))
+    }
+
+    access_token.remove()
+    refresh_token.remove()
+
+    return {
+      success: true,
+      message: "Logout success"
+    }
+  })
