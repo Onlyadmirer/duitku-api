@@ -45,7 +45,7 @@ export const User = {
       throw new Error("Email atau password salah")
     }
 
-    const isValid = await Bun.password.verify(user.password, data.password)
+    const isValid = await Bun.password.verify(data.password, user.password)
 
     if (!isValid) {
       throw new Error("Email atau password salah")
