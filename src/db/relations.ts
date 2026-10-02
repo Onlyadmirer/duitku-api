@@ -5,9 +5,11 @@ import { defineRelations } from "drizzle-orm"
 export const relations = defineRelations(schema, (r) => ({
   users: {
     accounts: r.many.accounts(),
-    refreshToken: r.many.refreshTokens(),
-    carts: r.many.carts(),
-    orders: r.many.orders()
+    refreshTokens: r.many.refreshTokens(),
+    wallets: r.many.wallets(),
+    transactions: r.many.transactions(),
+    budgets: r.many.budgets(),
+    categories: r.many.categories()
   },
 
   accounts: {
@@ -18,39 +20,45 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   categories: {
-    product: r.many.products()
+    budgets: r.many.budgets(),
+    transactions: r.many.transactions(),
+    user: r.one.users({
+      from: r.categories.userId,
+      to: r.users.id
+    })
   },
 
-  products: {
-    categories: r.one.categories({
-      from: r.products.categoryId,
+  wallets: {
+    transactions: r.many.transactions(),
+    user: r.one.users({
+      from: r.wallets.userId,
+      to: r.users.id
+    })
+  },
+
+  budgets: {
+    category: r.one.categories({
+      from: r.budgets.categoryId,
       to: r.categories.id
     }),
-    cartItems: r.many.carts(),
-    orderItems: r.many.orderItems()
-  },
-
-  carts: {
-    product: r.one.products(),
-    user: r.one.users()
-  },
-
-  orders: {
     user: r.one.users({
-      from: r.users.id,
-      to: r.orders.userId
-    }),
-    items: r.many.orderItems()
+      from: r.budgets.userId,
+      to: r.users.id
+    })
   },
 
-  orderItems: {
-    product: r.one.products({
-      from: r.products.id,
-      to: r.orderItems.productId
+  transactions: {
+    user: r.one.users({
+      from: r.transactions.userId,
+      to: r.users.id
     }),
-    order: r.one.orders({
-      from: r.orders.id,
-      to: r.orderItems.orderId
+    wallet: r.one.wallets({
+      from: r.transactions.walletId,
+      to: r.wallets.id
+    }),
+    category: r.one.categories({
+      from: r.transactions.categoryId,
+      to: r.categories.id,
     })
   },
 
