@@ -160,21 +160,20 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
         refresh_token.remove()
         access_token.remove()
 
-        return {
+        return status(401, {
           success: false,
           message: "Refresh token reuse detected"
-        }
+        })
       }
-
 
       if (existingToken.expiresAt <= new Date()) {
         access_token.remove()
         refresh_token.remove()
 
-        return {
+        return status(401, {
           success: false,
           message: "Refresh token expired"
-        }
+        })
       }
 
       refresh_token.remove()
@@ -205,8 +204,6 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
       email: user.email
     })
 
-    const maxAge = Math.floor(result.storedToken.expiresAt.getTime() - Date.now() / 1000)
-
     access_token.set({
       value: newAccessToken,
       httpOnly: true,
@@ -223,7 +220,7 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/auth",
-      maxAge: maxAge,
+      maxAge: 60 * 60 * 24 * 7,
     })
 
     return {

@@ -45,7 +45,7 @@ export const User = {
     }
 
     if (!user.password) {
-      throw new Error("Silahkan login dengan cara lain")
+      throw new Error("Email atau password salah")
     }
 
     const isValid = await argon2.verify(user.password, data.password)
