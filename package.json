@@ -7,7 +7,6 @@
   },
   "dependencies": {
     "@elysia/jwt": "^1.4.2",
-    "argon2": "^0.45.1",
     "drizzle-orm": "^1.0.0-rc.4",
     "elysia": "latest",
     "postgres": "^3.4.9"

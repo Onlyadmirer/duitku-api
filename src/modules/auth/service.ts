@@ -2,7 +2,6 @@
 import { db } from "../../db";
 import { users } from "../../db/schema";
 import { userLoginInput, userRegInput } from "./model";
-import * as argon2 from "argon2"
 
 export const User = {
   // register
@@ -17,10 +16,8 @@ export const User = {
       throw new Error("Email already exist")
     }
 
-    const hashedPass = await argon2.hash(data.password, {
-      type: argon2.argon2id,
-      memoryCost: 2 ** 16,
-      timeCost: 3,
+    const hashedPass = await Bun.password.hash(data.password, {
+      algorithm: "argon2id"
     })
 
     const [newUser] = await db.insert(users).values({
@@ -48,7 +45,7 @@ export const User = {
       throw new Error("Email atau password salah")
     }
 
-    const isValid = await argon2.verify(user.password, data.password)
+    const isValid = await Bun.password.verify(user.password, data.password)
 
     if (!isValid) {
       throw new Error("Email atau password salah")
