@@ -1,4 +1,4 @@
-import Elysia, { status } from "elysia";
+import Elysia from "elysia";
 import { User } from "./service";
 import { userLogin, userRegistration } from "./model";
 import { accessJwt } from "../plugin/jwt";
@@ -7,7 +7,9 @@ import { db } from "../../db";
 import { refreshTokens } from "../../db/schema";
 import { and, eq, gt, isNull } from "drizzle-orm";
 
-export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
+const REFRESH_TTL = Date.now() + 7 * 24 * 60 * 60 * 1000
+
+export const authModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
   .post("/register", async ({ body, set }) => {
     const newUser = await User.createUser(body)
     set.status = 201
@@ -43,7 +45,7 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
       tokenHash: hashedRefreshToken,
       familyId,
       expiresAt: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000
+        REFRESH_TTL
       )
     })
 
@@ -69,7 +71,7 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
 
     set.status = 201
     return {
-      succsess: true,
+      succses: true,
       message: "Login success"
     }
   }, {
@@ -120,7 +122,7 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
       await tx.insert(refreshTokens).values({
         userId: storedToken.userId,
         tokenHash: newHashedRefresehToken,
-        expiresAt: storedToken.expiresAt,
+        expiresAt: new Date(REFRESH_TTL),
         familyId: storedToken.familyId
       })
 
@@ -154,7 +156,9 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
           revokedAt: new Date()
         })
           .where(
-            eq(refreshTokens.familyId, existingToken.familyId)
+            and(
+              eq(refreshTokens.familyId, existingToken.familyId),
+              isNull(refreshTokens.revokedAt))
           )
 
         refresh_token.remove()
@@ -181,7 +185,7 @@ export const userModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
 
       return status(401, {
         status: false,
-        messsage: "Refresh token tidak valid"
+        message: "Refresh token tidak valid"
       })
     }
 

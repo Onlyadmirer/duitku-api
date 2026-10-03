@@ -1,32 +1,69 @@
 
 import { db } from "../../db";
-import { users } from "../../db/schema";
+import { defaultCategoriesFor } from "../../db/defaultCategories";
+import { categories, users, wallets } from "../../db/schema";
+import { AppError } from "../lib/error";
 import { userLoginInput, userRegInput } from "./model";
+
 
 export const User = {
   // register
   async createUser(data: userRegInput) {
+
+    const email = data.email.trim().toLowerCase()
+
     const exist = await db.query.users.findFirst({
       where: {
-        email: data.email
+        email: email
       }
     })
 
     if (exist) {
-      throw new Error("Email already exist")
+      throw new AppError(409, 'EMAIL_TAKEN', 'Email sudah terdaftar')
     }
 
     const hashedPass = await Bun.password.hash(data.password, {
       algorithm: "argon2id"
     })
 
-    const [newUser] = await db.insert(users).values({
-      name: data.name,
-      email: data.email,
-      password: hashedPass,
-    }).returning({ id: users.id, email: users.email })
+    try {
+      return await db.transaction(async (tx) => {
+        const [newUser] = await tx.insert(users).values({
+          name: data.name,
+          email: email,
+          password: hashedPass,
+        }).returning({ id: users.id, name: users.name, email: users.email })
 
-    return newUser
+        if (!newUser) throw new Error("Failed to create user")
+
+        await tx.insert(wallets).values({
+          name: "Dompet Utama",
+          initialBalance: 0,
+          userId: newUser.id
+        })
+
+        await tx.insert(categories).values(
+          defaultCategoriesFor(newUser.id)
+        )
+
+        return newUser
+      })
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        err.cause &&
+        typeof err.cause === "object" &&
+        "code" in err.cause &&
+        "constraint_name" in err.cause &&
+        err.cause.code === "23505" &&
+        err.cause.constraint_name === "users_email_key"
+      ) {
+        throw new AppError(409, "EMAIL_TAKEN", "Email already exists")
+      }
+
+      throw err
+    }
+
   },
 
   // login
