@@ -1,49 +1,69 @@
 import { and, asc, eq } from "drizzle-orm"
 import { db } from "../../db"
 import { categories } from "../../db/schema"
-import { categoryCreateInput, categoryType, categoryUpdateInput } from "./model"
+import { categoryCreateInput, categoryList, categoryUpdateInput } from "./model"
 import { AppError } from "../lib/error"
+import { isPgError } from "../lib/pgError"
 
 export const Category = {
 
-  async list(userId: string, type: categoryType) {
-    const categoryList = await db.select()
+  async list(userId: string, query: categoryList) {
+    return await db.select()
       .from(categories)
       .where(and(
         eq(categories.userId, userId),
-        eq(categories.type, type.type)
+        query.type ? eq(categories.type, query.type) : undefined
       ))
       .orderBy(asc(categories.name))
 
-    return categoryList
+  },
+
+  async getOne(userId: string, id: string) {
+    const [category] = await db.select().from(categories)
+      .where(and(
+        eq(categories.userId, userId),
+        eq(categories.id, id)
+      ))
+
+    if (!category) {
+      throw new AppError(404, "NOT_FOUND", "category not foud")
+    }
+
+    return category
   },
 
   async create(userId: string, data: categoryCreateInput) {
-    await db.insert(categories).values({
+    const [newCategory] = await db.insert(categories).values({
       userId: userId,
       name: data.name,
       type: data.type,
       color: data.color
+    }).returning({
+      id: categories.id
     })
-  },
 
+    if (!newCategory) {
+      throw new Error("Failed to create category")
+    }
+
+    return newCategory
+  },
 
   async update(userId: string, id: string, data: categoryUpdateInput) {
     const [updateCategory] = await db.update(categories).set({
       name: data.name,
-      type: data.type,
       color: data.color
     }).where(and(
       eq(categories.userId, userId),
       eq(categories.id, id)
     )).returning({
+      id: categories.id,
       name: categories.name,
-      type: categories.type,
       color: categories.color
     })
 
     if (!updateCategory) {
-      throw new AppError(404, "NOT_FOUND", "update failed")
+      throw new AppError(404, "NOT_FOUND", "category not found")
     }
 
     return updateCategory
@@ -57,19 +77,11 @@ export const Category = {
       )).returning({ id: categories.id })
 
       if (!deleteCategory) {
-        throw new AppError(404, "NOT_FOUND", "delete failed")
+        throw new AppError(404, "NOT_FOUND", "category not found")
       }
     } catch (err) {
-      if (
-        err instanceof Error &&
-        err.cause &&
-        typeof err.cause === "object" &&
-        "code" in err.cause &&
-        "constraint_name" in err.cause &&
-        err.cause.code === "23505" &&
-        err.cause.constraint_name === "users_email_key"
-      ) {
-        throw new AppError(409, "EMAIL_TAKEN", "Email already exists")
+      if (isPgError(err, "23503")) {
+        throw new AppError(409, "CATEGORY_IN_USE", "category is still in use for transaction")
       }
 
       throw err

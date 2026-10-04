@@ -1,7 +1,7 @@
 import Elysia, { t } from "elysia";
 import { authGuard } from "../plugin/authGuard";
 import { Category } from "./service";
-import { category, categoryType } from "./model";
+import { categoryCreate, categoryList, categoryUpdate } from "./model";
 
 export const categoryModules = new Elysia({ prefix: "/categories" })
   .use(authGuard)
@@ -13,17 +13,29 @@ export const categoryModules = new Elysia({ prefix: "/categories" })
       data: listCat
     }
   }, {
-    query: categoryType
+    query: categoryList
   })
-  .post("/create", async ({ userId, body }) => {
+  .get("/:id", async ({ userId, params: { id } }) => {
+    const result = await Category.getOne(userId, id)
+    return {
+      success: true,
+      data: result
+    }
+  }, {
+    params: t.Object({
+      id: t.String({ format: "uuid" })
+    }),
+  })
+  .post("/", async ({ userId, body, set }) => {
     await Category.create(userId, body)
 
+    set.status = 201
     return {
       success: true,
       message: "successfully create category"
     }
-  }, { body: category })
-  .patch("/update/:id", async ({ userId, params: { id }, body }) => {
+  }, { body: categoryCreate })
+  .patch("/:id", async ({ userId, params: { id }, body }) => {
     const update = await Category.update(userId, id, body)
 
     return update
@@ -31,9 +43,9 @@ export const categoryModules = new Elysia({ prefix: "/categories" })
     params: t.Object({
       id: t.String({ format: "uuid" })
     }),
-    body: category
+    body: categoryUpdate
   })
-  .delete("/delete/:id", async ({ userId, params: { id } }) => {
+  .delete("/:id", async ({ userId, params: { id } }) => {
     await Category.remove(userId, id)
 
     return {
