@@ -3,6 +3,7 @@ import { db } from "../../db";
 import { defaultCategoriesFor } from "../../db/defaultCategories";
 import { categories, users, wallets } from "../../db/schema";
 import { AppError } from "../lib/error";
+import { isPgError } from "../lib/pgError";
 import { userLoginInput, userRegInput } from "./model";
 
 
@@ -49,16 +50,8 @@ export const User = {
         return newUser
       })
     } catch (err) {
-      if (
-        err instanceof Error &&
-        err.cause &&
-        typeof err.cause === "object" &&
-        "code" in err.cause &&
-        "constraint_name" in err.cause &&
-        err.cause.code === "23505" &&
-        err.cause.constraint_name === "users_email_key"
-      ) {
-        throw new AppError(409, "EMAIL_TAKEN", "Email already exists")
+      if (isPgError(err, "23503")) {
+        throw new AppError(409, "EMAIL_TAKEN", "Email already exist")
       }
 
       throw err
