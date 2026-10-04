@@ -2,9 +2,8 @@ import { Elysia } from 'elysia'
 import { AppError, type ErrorBody } from '../lib/error'
 
 // Semua error dibalas dengan format seragam: { error: { code, message, fields? } }
-export const errorHandler = new Elysia({ name: 'error-handler' }).onError(
-  { as: 'global' },
-  ({ code, error, set }): ErrorBody => {
+export const errorHandler = new Elysia({ name: 'error-handler' })
+  .onError({ as: 'global' }, ({ code, error, set }): ErrorBody => {
     if (error instanceof AppError) {
       set.status = error.status
       return { error: { code: error.code, message: error.message } }
@@ -30,4 +29,4 @@ export const errorHandler = new Elysia({ name: 'error-handler' }).onError(
     set.status = 500
     return { error: { code: 'INTERNAL_ERROR', message: 'Terjadi kesalahan pada server' } }
   },
-)
+  )
