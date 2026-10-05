@@ -2,8 +2,8 @@
 import { db } from "../../db";
 import { defaultCategoriesFor } from "../../db/defaultCategories";
 import { categories, users, wallets } from "../../db/schema";
-import { AppError } from "../lib/error";
-import { isPgError } from "../lib/pgError";
+import { AppError } from "../../lib/error";
+import { isPgError } from "../../lib/pgError";
 import { userLoginInput, userRegInput } from "./model";
 
 

@@ -1,7 +1,7 @@
 import Elysia, { t } from "elysia";
-import { authGuard } from "../plugin/authGuard";
 import { Category } from "./service";
 import { categoryCreate, categoryList, categoryUpdate } from "./model";
+import { authGuard } from "../../plugin/authGuard";
 
 export const categoryModules = new Elysia({ prefix: "/categories" })
   .use(authGuard)

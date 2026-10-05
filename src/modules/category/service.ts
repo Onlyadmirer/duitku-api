@@ -2,8 +2,8 @@ import { and, asc, eq } from "drizzle-orm"
 import { db } from "../../db"
 import { categories } from "../../db/schema"
 import { categoryCreateInput, categoryList, categoryUpdateInput } from "./model"
-import { AppError } from "../lib/error"
-import { isPgError } from "../lib/pgError"
+import { AppError } from "../../lib/error"
+import { isPgError } from "../../lib/pgError"
 
 export const Category = {
 

@@ -1,11 +1,11 @@
 import Elysia from "elysia";
 import { User } from "./service";
 import { userLogin, userRegistration } from "./model";
-import { accessJwt } from "../plugin/jwt";
-import { generateRefreshToken, hashRefreshToken } from "../utils/refreshToken";
+import { generateRefreshToken, hashRefreshToken } from "../../utils/refreshToken";
 import { db } from "../../db";
 import { refreshTokens } from "../../db/schema";
 import { and, eq, gt, isNull } from "drizzle-orm";
+import { accessJwt } from "../../plugin/jwt";
 
 const REFRESH_TTL = Date.now() + 7 * 24 * 60 * 60 * 1000
 
