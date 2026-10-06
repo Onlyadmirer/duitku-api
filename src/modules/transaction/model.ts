@@ -12,4 +12,9 @@ export const createTransaction = t.Object({
   date: t.String({ format: "date" })
 })
 
+export const getOneTransaction = t.Object({
+  id: t.String({ format: "uuid" })
+})
+
 export type createTransactionType = Static<typeof createTransaction>
+export type getOneTransactionType = Static<typeof getOneTransaction>

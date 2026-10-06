@@ -1,13 +1,23 @@
 import Elysia from "elysia";
 import { authGuard } from "../../plugin/authGuard";
 import { Transaction } from "./service";
-import { createTransaction } from "./model";
+import { createTransaction, getOneTransaction } from "./model";
 
 export const transactionModules = new Elysia({ prefix: "/transactions" }).use(authGuard)
   .post('/', async ({ body, userId }) => {
-    const transaction = Transaction.create(userId, body)
+    const createTransaction = Transaction.create(userId, body)
 
-    return transaction
+    return createTransaction
   }, {
     body: createTransaction
+  })
+  .get("/id", async ({ userId, params: { id } }) => {
+    const transaction = Transaction.getOne(userId, id)
+
+    return {
+      status: true,
+      data: transaction
+    }
+  }, {
+    params: getOneTransaction
   })

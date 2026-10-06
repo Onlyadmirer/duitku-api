@@ -3,6 +3,7 @@ import { db } from "../../db";
 import { createTransactionType } from "./model";
 import { AppError } from "../../lib/error";
 import { transactions } from "../../db/schema";
+import { and, eq } from "drizzle-orm";
 
 export const Transaction = {
   async create(userId: string, data: createTransactionType) {
@@ -44,5 +45,19 @@ export const Transaction = {
     }
 
     return addTransaction
+  },
+
+  async getOne(userId: string, id: string) {
+    const [transaction] = await db.select().from(transactions).where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.id, id))
+    )
+
+    if (!transaction) {
+      throw new AppError(404, "NOT_FOUND", "transaction Not found")
+    }
+
+    return transaction
   }
 }
