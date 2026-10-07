@@ -1,8 +1,8 @@
 
 import { db } from "../../db";
-import { createTransactionType } from "./model";
+import { createTransactionType, updateTransactionType } from "./model";
 import { AppError } from "../../lib/error";
-import { transactions } from "../../db/schema";
+import { transactions, wallets } from "../../db/schema";
 import { and, eq } from "drizzle-orm";
 
 export const Transaction = {
@@ -38,6 +38,15 @@ export const Transaction = {
       note: data.note,
       date: data.date,
       type: data.type
+    }).returning({
+      id: transactions.id,
+      userId: transactions.userId,
+      walletId: transactions.walletId,
+      categoryId: transactions.categoryId,
+      amount: transactions.amount,
+      note: transactions.note,
+      date: transactions.date,
+      type: transactions.type
     })
 
     if (!addTransaction) {
@@ -56,6 +65,29 @@ export const Transaction = {
 
     if (!transaction) {
       throw new AppError(404, "NOT_FOUND", "transaction Not found")
+    }
+
+    return transaction
+  },
+
+  async updateTransaction(userId: string, id: string, data: updateTransactionType) {
+    const [transaction] = await db.update(transactions).set(data).where(and(
+      eq(transactions.userId, userId),
+      eq(transactions.id, id)
+    )).returning({
+      id: transactions.id,
+      userId: transactions.userId,
+      walletId: transactions.walletId,
+      amount: transactions.amount,
+      type: transactions.type,
+      note: transactions.note,
+      createdAt: transactions.createdAt,
+      date: transactions.date,
+      categoryId: transactions.categoryId
+    })
+
+    if (!transaction) {
+      throw new AppError(404, "NOT_FOUND", "transaction not found")
     }
 
     return transaction

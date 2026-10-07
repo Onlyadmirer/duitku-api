@@ -16,5 +16,16 @@ export const getOneTransaction = t.Object({
   id: t.String({ format: "uuid" })
 })
 
+export const updateTransaction = t.Object({
+  walletId: t.Optional(t.String({ format: "uuid" })),
+  categoryId: t.Optional(t.String({ format: "uuid" })),
+  amount: t.Optional(t.Integer({ minimum: 1 })),
+  note: t.Optional(t.String({ maxLength: 200 })),
+  date: t.Optional(t.String({ format: "date" }))
+}, {
+  minProperties: 1
+})
+
 export type createTransactionType = Static<typeof createTransaction>
 export type getOneTransactionType = Static<typeof getOneTransaction>
+export type updateTransactionType = Static<typeof updateTransaction>
