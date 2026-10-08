@@ -91,5 +91,18 @@ export const Transaction = {
     }
 
     return transaction
+  },
+
+  async delete(userId: string, id: string) {
+    const [transaction] = await db.delete(transactions).where(and(
+      eq(transactions.userId, userId),
+      eq(transactions.id, id)
+    )).returning({
+      id: transactions.id
+    })
+
+    if (!transaction) {
+      throw new AppError(404, "NOT_FOUND", "failed to delete transaction")
+    }
   }
 }

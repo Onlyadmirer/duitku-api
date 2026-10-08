@@ -34,3 +34,16 @@ export const transactionModules = new Elysia({ prefix: "/transactions" }).use(au
     }),
     body: updateTransaction
   })
+  .delete("/:id", async ({ userId, params: { id } }) => {
+    await Transaction.delete(userId, id)
+
+    return {
+      success: true,
+      message: "successfully delete transaction"
+    }
+
+  }, {
+    params: t.Object({
+      id: t.String({ format: "uuid" })
+    })
+  })
