@@ -1,11 +1,48 @@
 
 import { db } from "../../db";
-import { createTransactionType, updateTransactionType } from "./model";
+import { createTransactionType, listTransactionQuery, updateTransactionType } from "./model";
 import { AppError } from "../../lib/error";
-import { transactions, wallets } from "../../db/schema";
-import { and, eq } from "drizzle-orm";
+import { transactions } from "../../db/schema";
+import { and, desc, eq, gte, ilike, lte } from "drizzle-orm";
 
 export const Transaction = {
+
+  async list(userId: string, q: listTransactionQuery) {
+    const conditions = [
+      eq(transactions.userId, userId)
+    ]
+
+    if (q.from) {
+      conditions.push(gte(transactions.date, q.from))
+    }
+    if (q.to) {
+      conditions.push(lte(transactions.date, q.to))
+    }
+    if (q.search) {
+      conditions.push(ilike(transactions.note, `%${q.search}%`))
+    }
+
+    const itemsPromise = db.select().from(transactions).where(and(
+      ...conditions
+    )).orderBy(desc(transactions.date), desc(transactions.createdAt))
+      .limit(q.limit)
+      .offset((q.page - 1) * q.limit)
+
+    const totalPromise = db.$count(transactions, and(...conditions))
+
+    const [items, total] = await Promise.all([
+      itemsPromise,
+      totalPromise
+    ])
+
+    return {
+      items,
+      total,
+      page: q.page,
+      limit: q.limit
+    }
+  },
+
   async create(userId: string, data: createTransactionType) {
     const user = await db.query.wallets.findFirst({
       where: {
