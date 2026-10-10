@@ -4,20 +4,19 @@ import { Transaction } from "./service";
 import { createTransaction, getOneTransaction, transactionQuery, updateTransaction } from "./model";
 
 export const transactionModules = new Elysia({ prefix: "/transactions" }).use(authGuard)
-  .post('/', async ({ body, userId }) => {
-    const createTransaction = await Transaction.create(userId, body)
+  .post('/', async ({ body, userId, set }) => {
+    const created = await Transaction.create(userId, body)
 
-    return createTransaction
+    set.status = 201
+    return {
+      success: true,
+      data: created
+    }
   }, {
     body: createTransaction
   })
   .get("/", async ({ userId, query }) => {
-    const transactionList = await Transaction.list(userId,
-      {
-        ...query,
-        page: Number(query.page ?? 1),
-        limit: Number(query.limit ?? 20)
-      })
+    const transactionList = await Transaction.list(userId, query)
 
     return {
       success: true,
@@ -30,7 +29,7 @@ export const transactionModules = new Elysia({ prefix: "/transactions" }).use(au
     const transaction = await Transaction.getOne(userId, id)
 
     return {
-      status: true,
+      success: true,
       data: transaction
     }
   }, {
