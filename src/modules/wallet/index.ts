@@ -1,7 +1,7 @@
-import Elysia from "elysia";
+import Elysia, { t } from "elysia";
 import { authGuard } from "../../plugin/authGuard";
 import { Wallet } from "./service";
-import { createWallet } from "./model";
+import { createWallet, updateWallet } from "./model";
 
 export const walletModules = new Elysia({ prefix: "/wallets" }).use(authGuard)
   .post("/", async ({ userId, body, set }) => {
@@ -14,4 +14,18 @@ export const walletModules = new Elysia({ prefix: "/wallets" }).use(authGuard)
     }
   }, {
     body: createWallet
+  })
+  .patch("/:id", async ({ userId, params: { id }, body }) => {
+    const wallet = await Wallet.update(userId, id, body)
+
+    return {
+      success: true,
+      data: wallet
+    }
+  }, {
+    params: t.Object({
+      id: t.String({ format: "uuid" })
+    }),
+
+    body: updateWallet
   })
