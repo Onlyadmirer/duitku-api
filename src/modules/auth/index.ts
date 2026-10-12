@@ -9,7 +9,12 @@ import { accessJwt } from "../../plugin/jwt";
 
 const REFRESH_TTL = Date.now() + 7 * 24 * 60 * 60 * 1000
 
-export const authModules = new Elysia({ prefix: "/auth" }).use(accessJwt)
+export const authModules = new Elysia({
+  prefix: "/auth",
+  detail: {
+    tags: ["Auth"]
+  }
+}).use(accessJwt)
   .post("/register", async ({ body, set }) => {
     const newUser = await User.createUser(body)
     set.status = 201

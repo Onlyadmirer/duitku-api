@@ -3,7 +3,12 @@ import { Category } from "./service";
 import { categoryCreate, categoryList, categoryUpdate } from "./model";
 import { authGuard } from "../../plugin/authGuard";
 
-export const categoryModules = new Elysia({ prefix: "/categories" })
+export const categoryModules = new Elysia({
+  prefix: "/categories",
+  detail: {
+    tags: ["Category"]
+  }
+})
   .use(authGuard)
   .get("/", async ({ userId, query }) => {
     const listCat = await Category.list(userId, query)

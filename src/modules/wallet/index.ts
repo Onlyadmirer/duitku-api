@@ -3,7 +3,10 @@ import { authGuard } from "../../plugin/authGuard";
 import { Wallet } from "./service";
 import { createWallet, updateWallet } from "./model";
 
-export const walletModules = new Elysia({ prefix: "/wallets" }).use(authGuard)
+export const walletModules = new Elysia({
+  prefix: "/wallets",
+  tags: ["Wallet"]
+}).use(authGuard)
   .post("/", async ({ userId, body, set }) => {
     const newWallet = await Wallet.create(userId, body)
 
