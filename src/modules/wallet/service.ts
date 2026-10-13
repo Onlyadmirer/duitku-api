@@ -19,6 +19,16 @@ export const Wallet = {
     return newWallet
   },
 
+  async getList(userId: string) {
+    const userWallets = await db.select().from(wallets).where(eq(wallets.userId, userId))
+
+    if (!userWallets) {
+      throw new AppError(404, "NOT_FOUND", "Wallets not found")
+    }
+
+    return userWallets
+  },
+
   async update(userId: string, id: string, data: updateWalletType) {
     const [updateWallet] = await db.update(wallets).set({
       name: data.name,

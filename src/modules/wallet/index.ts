@@ -18,6 +18,14 @@ export const walletModules = new Elysia({
   }, {
     body: createWallet
   })
+  .get("/", async ({ userId }) => {
+    const listWallet = await Wallet.getList(userId)
+
+    return {
+      success: true,
+      data: listWallet
+    }
+  })
   .patch("/:id", async ({ userId, params: { id }, body }) => {
     const wallet = await Wallet.update(userId, id, body)
 
