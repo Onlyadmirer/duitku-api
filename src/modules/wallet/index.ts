@@ -40,3 +40,15 @@ export const walletModules = new Elysia({
 
     body: updateWallet
   })
+  .delete("/:id", async ({ userId, params: { id } }) => {
+    await Wallet.delete(userId, id)
+
+    return {
+      success: true,
+      message: "Delete wallet successfully"
+    }
+  }, {
+    params: t.Object({
+      id: t.String({ format: "uuid" })
+    }),
+  })

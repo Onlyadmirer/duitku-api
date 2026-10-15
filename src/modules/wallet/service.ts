@@ -47,6 +47,17 @@ export const Wallet = {
     }
 
     return updateWallet
+  },
+
+  async delete(userId: string, id: string) {
+    const wallet = await db.delete(wallets).where(
+      and(eq(wallets.userId, userId), eq(wallets.id, id))
+    )
+
+    if (!wallet) {
+      throw new AppError(404, "NOT_FOUND", "Wallet not found")
+    }
+
   }
 
 }
