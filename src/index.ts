@@ -7,6 +7,7 @@ import { errorHandler } from "./plugin/errorHandler";
 import { transactionModules } from "./modules/transaction";
 import { walletModules } from "./modules/wallet";
 import { budgetsModules } from "./modules/budgets";
+import { reportModules } from "./modules/reports";
 
 const app = new Elysia()
   .use(openapi())
@@ -17,6 +18,7 @@ const app = new Elysia()
   .use(transactionModules)
   .use(walletModules)
   .use(budgetsModules)
+  .use(reportModules)
   .listen(3000);
 
 console.log(
