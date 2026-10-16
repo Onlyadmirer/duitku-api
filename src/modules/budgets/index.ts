@@ -1,4 +1,4 @@
-import Elysia from "elysia";
+import Elysia, { t } from "elysia";
 import { authGuard } from "../../plugin/authGuard";
 import { Budgets } from "./service";
 import { budgetQuery, budgetUpsert } from "./model";
@@ -25,4 +25,16 @@ export const budgetsModules = new Elysia({
     }
   }, {
     body: budgetUpsert
+  })
+  .delete("/:id", async ({ userId, params: { id } }) => {
+    await Budgets.remove(userId, id)
+
+    return {
+      success: true,
+      message: "successfully delete budget"
+    }
+  }, {
+    params: t.Object({
+      id: t.String({ format: "uuid" })
+    })
   })

@@ -48,5 +48,18 @@ export const Budgets = {
     }).returning()
 
     return newBudgets
+  },
+
+  async remove(userId: string, id: string) {
+    const budget = await db.delete(budgets).where(
+      and(
+        eq(budgets.userId, userId),
+        eq(budgets.id, id)
+      )
+    )
+
+    if (!budget) {
+      throw new AppError(404, "NOT_FOUND", "Budget not found")
+    }
   }
 }
