@@ -38,13 +38,13 @@ export const Reports = {
       )
     ).groupBy(transactions.type)
 
-    const expense = Number(monthlyTotals.find(item => {
+    const expense = Number(monthlyTotals.find(item =>
       item.type === "expense"
-    })?.total ?? "0")
+    )?.total ?? "0")
 
-    const income = Number(monthlyTotals.find(item => {
+    const income = Number(monthlyTotals.find(item =>
       item.type === "income"
-    })?.total ?? "0")
+    )?.total ?? "0")
 
     const net = income - expense
 
@@ -56,13 +56,13 @@ export const Reports = {
       eq(transactions.userId, userId)
     ).groupBy(transactions.type)
 
-    const totalExpense = Number(allTimeTotals.find(item => {
+    const totalExpense = Number(allTimeTotals.find(item =>
       item.type === "expense"
-    })?.total ?? "0")
+    )?.total ?? "0")
 
-    const totalIncome = Number(allTimeTotals.find(item => {
+    const totalIncome = Number(allTimeTotals.find(item =>
       item.type === "income"
-    })?.total ?? "0")
+    )?.total ?? "0")
 
     // saldo wallets
     const [walletTotal] = await db.select({
