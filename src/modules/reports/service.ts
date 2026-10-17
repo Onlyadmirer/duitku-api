@@ -1,6 +1,6 @@
-import { and, eq, gte, lt, sql, sum } from "drizzle-orm";
+import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { transactions, wallets } from "../../db/schema";
+import { budgets, categories, transactions, wallets } from "../../db/schema";
 
 function monthRange(date: string) {
 
@@ -79,6 +79,77 @@ export const Reports = {
       expense,
       net,
       balance
+    }
+  },
+
+  async byCategory(userId: string, month: string) {
+
+    const datas = await db.select({
+      categoryId: categories.id,
+      name: categories.name,
+      color: categories.color,
+      limit: budgets.limitAmount,
+      spent: sql<number>`coalesce(sum(${transactions.amount}), 0)`.mapWith(Number)
+    }).from(categories)
+      .leftJoin(
+        transactions,
+        and(
+          eq(categories.id, transactions.categoryId),
+          eq(transactions.userId, userId)
+        )
+      )
+      .leftJoin(
+        budgets,
+        and(
+          eq(categories.id, budgets.categoryId),
+          eq(budgets.month, month)
+        )
+      )
+      .where(
+        and(
+          eq(categories.userId, userId),
+          eq(categories.type, "expense")
+        )
+      )
+      .groupBy(
+        categories.id,
+        budgets.limitAmount
+      )
+
+    const items = datas.map(data => {
+
+      if (data.limit === null) {
+        return {
+          ...data,
+          percent: null,
+          status: "tanpa-anggaran"
+        }
+      }
+
+      const percent = data.spent * 100 / data.limit
+      const remaining = data.limit - data.spent
+
+      let status: string
+
+      if (data.spent > data.limit) {
+        status = "melebihi"
+      } else if (percent >= 80) {
+        status = "hampir-habis"
+      } else {
+        status = "aman"
+      }
+
+      return {
+        ...data,
+        remaining,
+        percent,
+        status
+      }
+    })
+
+    return {
+      month,
+      items
     }
   }
 }
