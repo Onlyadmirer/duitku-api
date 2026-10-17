@@ -16,7 +16,7 @@ export const budgetsModules = new Elysia({
   }, {
     query: budgetQuery
   })
-  .put("/:id", async ({ userId, body }) => {
+  .put("/", async ({ userId, body }) => {
     const newBudget = await Budgets.upsert(userId, body)
 
     return {
