@@ -7,7 +7,14 @@ import { budgetUpsertType } from "./model";
 export const Budgets = {
 
   async list(userId: string, month: string) {
-    const budgetLists = await db.select().from(budgets).where(
+    const items = await db.select({
+      id: budgets.id,
+      categoryId: budgets.categoryId,
+      categoryName: categories.name,
+      color: categories.color,
+      month: budgets.month,
+      limitAmount: budgets.limitAmount
+    }).from(budgets).where(
       and(
         eq(budgets.userId, userId),
         eq(budgets.month, month)
@@ -15,9 +22,15 @@ export const Budgets = {
     ).innerJoin(
       categories,
       eq(budgets.categoryId, categories.id)
+    ).groupBy(
+      budgets.id,
+      categories.id
     )
 
-    return budgetLists
+    return {
+      month,
+      items
+    }
 
   },
 
