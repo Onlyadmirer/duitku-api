@@ -50,3 +50,11 @@ export const reportModules = new Elysia({
       year: t.String({ pattern: '^[0-9]{4}' })
     })
   })
+  .get("/wallet-balances", async ({ userId }) => {
+    const balances = await Reports.walletBalances(userId)
+
+    return {
+      success: true,
+      items: balances
+    }
+  })

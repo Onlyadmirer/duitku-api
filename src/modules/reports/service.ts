@@ -196,4 +196,52 @@ export const Reports = {
       months
     }
   },
+
+  async walletBalances(userId: string,) {
+    const datas = await db.select({
+      id: wallets.id,
+      name: wallets.name,
+      initialBalance: wallets.initialBalance,
+      type: transactions.type,
+      total: sql<number>`coalesce(sum(${transactions.amount}), '0')`.mapWith(Number)
+    }).from(wallets).leftJoin(
+      transactions,
+      eq(wallets.id, transactions.walletId)
+    ).where(
+      eq(wallets.userId, userId)
+    ).groupBy(
+      wallets.id,
+      transactions.type,
+      wallets.name,
+      wallets.initialBalance
+    )
+
+    const items = datas.map((data) => {
+
+
+      let income: number = 0
+      let expense: number = 0
+
+      if (data.type === "income") {
+        income = data.total
+      } else if (data.type === "expense") {
+        expense = data.total
+      }
+
+      const balance = data.initialBalance + income - expense
+
+      return {
+        id: data.id,
+        name: data.name,
+        initialBalance: data.initialBalance,
+        income: income,
+        expense: expense,
+        balance: balance
+      }
+    })
+
+    return items
+
+  }
+
 }

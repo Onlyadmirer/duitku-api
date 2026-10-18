@@ -9,7 +9,7 @@ import { walletModules } from "./modules/wallet";
 import { budgetsModules } from "./modules/budgets";
 import { reportModules } from "./modules/reports";
 
-const app = new Elysia()
+const app = new Elysia({ prefix: "/api" })
   .use(openapi())
   .use(errorHandler)
   .use(authModules)
