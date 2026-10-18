@@ -28,7 +28,25 @@ export const reportModules = new Elysia({
 
     const reports = await Reports.byCategory(userId, month)
 
-    return reports
+    return {
+      success: true,
+      items: reports
+    }
   }, {
     query: monthQuery
+  })
+  .get("/monthly-trend", async ({ userId, query: { year } }) => {
+
+    const strYear = Number(year)
+
+    const months = await Reports.monthlyTrend(userId, strYear)
+
+    return {
+      success: true,
+      items: months
+    }
+  }, {
+    query: t.Object({
+      year: t.String({ pattern: '^[0-9]{4}' })
+    })
   })

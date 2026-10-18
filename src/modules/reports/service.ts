@@ -1,4 +1,4 @@
-import { and, eq, gte, lt, sql } from "drizzle-orm";
+import { and, eq, gte, lt, sql, sum } from "drizzle-orm";
 import { db } from "../../db";
 import { budgets, categories, transactions, wallets } from "../../db/schema";
 
@@ -151,5 +151,49 @@ export const Reports = {
       month,
       items
     }
-  }
+  },
+
+  async monthlyTrend(userId: string, year: number) {
+
+    const datas = await db.select({
+      month: sql<string>`to_char(${transactions.date}, 'YYYY-MM')`,
+      type: transactions.type,
+      total: sql<number>`coalesce(sum(${transactions.amount}), '0')`
+    }).from(transactions).where(
+      and(
+        eq(transactions.userId, userId),
+        gte(transactions.date, `${year}-01-01`),
+        lt(transactions.date, `${year + 1}-01-01`)
+      )
+    ).groupBy(
+      sql<string>`to_char(${transactions.date}, 'YYYY-MM')`,
+      transactions.type
+    ).orderBy(
+      sql`to_char(${transactions.date}, 'YYYY-MM')`
+    )
+
+    const months = Array.from({ length: 12 }, (_, i) => ({
+      month: `${year}-${String(i + 1).padStart(2, "0")}`,
+      income: 0,
+      expense: 0,
+      net: 0
+    }))
+
+    for (const data of datas) {
+      const index = Number(data.month.slice(5, 7)) - 1
+
+      if (data.type === "income") {
+        months[index].income = data.total
+      } else if (data.type === "expense") {
+        months[index].expense = data.total
+      }
+
+      months[index].net = months[index].income - months[index].expense
+    }
+
+    return {
+      year,
+      months
+    }
+  },
 }
