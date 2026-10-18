@@ -10,6 +10,7 @@
     "@elysia/openapi": "^1.4.16",
     "drizzle-orm": "^1.0.0-rc.4",
     "elysia": "latest",
+    "elysia-rate-limit": "4.6.2",
     "postgres": "^3.4.9"
   },
   "devDependencies": {

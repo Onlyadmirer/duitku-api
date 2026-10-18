@@ -6,15 +6,12 @@ import { db } from "../../db";
 import { refreshTokens } from "../../db/schema";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { accessJwt } from "../../plugin/jwt";
+import { loginLimit, registerLimit } from "../../plugin/limiter";
 
 const REFRESH_TTL = Date.now() + 7 * 24 * 60 * 60 * 1000
 
-export const authModules = new Elysia({
-  prefix: "/auth",
-  detail: {
-    tags: ["Auth"]
-  }
-}).use(accessJwt)
+const registerRoutes = new Elysia()
+  .use(registerLimit)
   .post("/register", async ({ body, set }) => {
     const newUser = await User.createUser(body)
     set.status = 201
@@ -22,10 +19,13 @@ export const authModules = new Elysia({
   }, {
     body: userRegistration
   })
+
+const loginRoutes = new Elysia().use(accessJwt)
+  .use(loginLimit)
   .post("/login", async ({
     body,
     accessJwt,
-    cookie: { access_token, refresh_token }, set }) => {
+    cookie: { access_token, refresh_token } }) => {
 
     const user = await User.loginUser(body)
 
@@ -74,7 +74,6 @@ export const authModules = new Elysia({
       maxAge: 60 * 60 * 24 * 7,
     })
 
-    set.status = 201
     return {
       succses: true,
       message: "Login success"
@@ -82,6 +81,14 @@ export const authModules = new Elysia({
   }, {
     body: userLogin
   })
+
+
+export const authModules = new Elysia({
+  prefix: "/auth",
+  detail: {
+    tags: ["Auth"]
+  }
+}).use(accessJwt)
   .post("/refresh", async ({
     accessJwt,
     status,
@@ -258,3 +265,5 @@ export const authModules = new Elysia({
       message: "Logout success"
     }
   })
+  .use(registerRoutes)
+  .use(loginRoutes)
