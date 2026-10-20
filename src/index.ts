@@ -19,6 +19,11 @@ const app = new Elysia({ prefix: "/api" })
   .use(walletModules)
   .use(budgetsModules)
   .use(reportModules)
+  .get("/cronjob", () => {
+    return {
+      status: "ok"
+    }
+  })
   .listen(3000);
 
 console.log(
