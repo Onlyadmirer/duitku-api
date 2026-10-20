@@ -59,7 +59,7 @@ const loginRoutes = new Elysia().use(accessJwt)
       value: accessToken,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "none",
       path: "/",
       maxAge: 60 * 15,
     })
@@ -69,7 +69,7 @@ const loginRoutes = new Elysia().use(accessJwt)
       value: refreshToken,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "none",
       path: "/auth",
       maxAge: 60 * 60 * 24 * 7,
     })
