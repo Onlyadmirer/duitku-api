@@ -13,6 +13,7 @@
   "dependencies": {
     "@elysia/jwt": "^1.4.2",
     "@elysia/openapi": "^1.4.16",
+    "@elysiajs/cors": "^1.4.2",
     "drizzle-orm": "^1.0.0-rc.4",
     "elysia": "latest",
     "elysia-rate-limit": "4.6.2",

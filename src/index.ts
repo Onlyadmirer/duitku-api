@@ -8,8 +8,17 @@ import { transactionModules } from "./modules/transaction";
 import { walletModules } from "./modules/wallet";
 import { budgetsModules } from "./modules/budgets";
 import { reportModules } from "./modules/reports";
+import cors from "@elysiajs/cors";
 
 const app = new Elysia({ prefix: "/api" })
+  .use(
+    cors({
+      origin: 'http://localhost:5173',
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    })
+  )
   .use(openapi())
   .use(errorHandler)
   .use(authModules)
