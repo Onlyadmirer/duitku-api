@@ -1,5 +1,6 @@
 import Elysia from "elysia"
 import { authGuard } from "../../plugin/authGuard"
+import { User } from "./service"
 
 export const userModules = new Elysia({
   prefix: "/me",
@@ -8,5 +9,11 @@ export const userModules = new Elysia({
   }
 }).use(authGuard)
   .get("/", async ({ userId }) => {
-    return userId
+    const user = await User.get(userId)
+
+    return {
+      success: true,
+      id: userId,
+      user
+    }
   })
