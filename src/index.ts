@@ -1,3 +1,4 @@
+/// <reference types="bun-types" />
 import { Elysia } from "elysia";
 import { authModules } from "./modules/auth";
 import openapi from "@elysia/openapi";
