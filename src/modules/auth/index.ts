@@ -8,7 +8,8 @@ import { and, eq, gt, isNull } from "drizzle-orm";
 import { accessJwt } from "../../plugin/jwt";
 import { loginLimit, registerLimit } from "../../plugin/limiter";
 
-const REFRESH_TTL = Date.now() + 7 * 24 * 60 * 60 * 1000
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000
+const isProduction = process.env.NODE_ENV === "production"
 
 const registerRoutes = new Elysia()
   .use(registerLimit)
@@ -49,17 +50,15 @@ const loginRoutes = new Elysia().use(accessJwt)
       userId: user.id,
       tokenHash: hashedRefreshToken,
       familyId,
-      expiresAt: new Date(
-        REFRESH_TTL
-      )
+      expiresAt: new Date(Date.now() + REFRESH_TTL_MS)
     })
 
     // access token cookie
     access_token.set({
       value: accessToken,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
       maxAge: 60 * 15,
     })
@@ -68,9 +67,9 @@ const loginRoutes = new Elysia().use(accessJwt)
     refresh_token.set({
       value: refreshToken,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      path: "/auth",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/api/auth",
       maxAge: 60 * 60 * 24 * 7,
     })
 
@@ -134,7 +133,7 @@ export const authModules = new Elysia({
       await tx.insert(refreshTokens).values({
         userId: storedToken.userId,
         tokenHash: newHashedRefresehToken,
-        expiresAt: new Date(REFRESH_TTL),
+        expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
         familyId: storedToken.familyId
       })
 
@@ -154,8 +153,8 @@ export const authModules = new Elysia({
 
       if (!existingToken) {
 
-        access_token.remove()
-        refresh_token.remove()
+        access_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/" })
+        refresh_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/api/auth" })
 
         return status(401, {
           success: false,
@@ -173,8 +172,8 @@ export const authModules = new Elysia({
               isNull(refreshTokens.revokedAt))
           )
 
-        refresh_token.remove()
-        access_token.remove()
+        refresh_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/api/auth" })
+        access_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/" })
 
         return status(401, {
           success: false,
@@ -183,8 +182,8 @@ export const authModules = new Elysia({
       }
 
       if (existingToken.expiresAt <= new Date()) {
-        access_token.remove()
-        refresh_token.remove()
+        access_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/" })
+        refresh_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/api/auth" })
 
         return status(401, {
           success: false,
@@ -192,8 +191,8 @@ export const authModules = new Elysia({
         })
       }
 
-      refresh_token.remove()
-      access_token.remove()
+      refresh_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/api/auth" })
+      access_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/" })
 
       return status(401, {
         status: false,
@@ -223,8 +222,8 @@ export const authModules = new Elysia({
     access_token.set({
       value: newAccessToken,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
       maxAge: 60 * 15,
     })
@@ -233,9 +232,9 @@ export const authModules = new Elysia({
     refresh_token.set({
       value: result.newRefreshToken,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/auth",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/api/auth",
       maxAge: 60 * 60 * 24 * 7,
     })
 
@@ -257,8 +256,8 @@ export const authModules = new Elysia({
       }).where(eq(refreshTokens.tokenHash, tokenHash))
     }
 
-    access_token.remove()
-    refresh_token.remove()
+    access_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/" })
+    refresh_token.set({ value: "", expires: new Date(0), maxAge: 0, path: "/api/auth" })
 
     return {
       success: true,

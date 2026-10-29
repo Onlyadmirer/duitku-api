@@ -53,6 +53,7 @@ cp .env.example .env
 | `DATABASE_URL` | Koneksi PostgreSQL, contoh: `postgresql://user:password@localhost:5432/duitku` |
 | `ACCESS_TOKEN_SECRET` | Secret untuk sign & verifikasi JWT access token (isi dengan string acak panjang) |
 | `NODE_ENV` | `development` atau `production` — menentukan flag `secure` pada cookie |
+| `CORS_ORIGIN` | Origin frontend yang diizinkan, pisahkan dengan koma — contoh: `http://localhost:5173,https://duitku.vercel.app` |
 
 ### Database
 
@@ -78,11 +79,56 @@ bun run start
 
 Server berjalan di `http://localhost:3000` dengan prefix `/api`. Cek kesehatan server lewat `GET /api/cronjob`.
 
+## Deploy ke Vercel
+
+Project ini sudah disiapkan untuk deploy ke Vercel dengan **Bun runtime** (mendukung `Bun.password` / Argon2id).
+
+Konfigurasi yang relevan:
+
+- `src/index.ts` — mendefinisikan app Elysia dan melakukan `export default app` (entry yang dideteksi Vercel). **Tidak** memanggil `app.listen()`.
+- `src/serve.ts` — entry untuk lokal/dev yang memanggil `app.listen()`.
+- `vercel.json` — mengaktifkan Bun runtime lewat `bunVersion`.
+
+### Variabel environment di Vercel
+
+| Variabel | Nilai |
+| --- | --- |
+| `DATABASE_URL` | Connection string **pooled** dari Neon (host mengandung `-pooler`, `?sslmode=require`) |
+| `ACCESS_TOKEN_SECRET` | String acak panjang, contoh: `openssl rand -hex 32` |
+| `CORS_ORIGIN` | Origin frontend, contoh: `http://localhost:5173,https://duitku.vercel.app` |
+
+`NODE_ENV` tidak perlu diset — Vercel otomatis menggunakan `production`.
+
+### Langkah deploy
+
+1. Push repository ke GitHub.
+2. Import project di [Vercel](https://vercel.com/new) — framework Elysia akan terdeteksi otomatis, build command dan output directory dibiarkan default.
+3. Tambahkan variabel environment di atas untuk environment **Production** dan **Preview**.
+4. Jalankan migrasi ke database Neon dari lokal. Gunakan connection string **direct** (bukan `-pooler`) untuk migrasi:
+
+   ```bash
+   DATABASE_URL="postgresql://user:password@ep-xxx.ap-southeast-1.aws.neon.tech/duitku?sslmode=require" bun run db:migrate
+   ```
+
+   Hindari `db:push` ke production tanpa backup.
+5. Deploy, lalu verifikasi:
+   - `GET https://<project>.vercel.app/api/cronjob` → `{ "status": "ok" }`
+   - `GET https://<project>.vercel.app/api/openapi` → Swagger UI
+   - Register → login → refresh untuk memastikan cookie berjalan.
+
+### Catatan
+
+- Bun runtime di Vercel masih berstatus **beta**. Bila bermasalah, alternatifnya pindah ke Node runtime dan mengganti `Bun.password` dengan library Argon2 yang kompatibel Node.
+- `prepare: false` pada koneksi database diperlukan karena Neon menggunakan PgBouncer (transaction mode).
+- Rate limiting (`elysia-rate-limit`) berjalan per-instance di serverless, sehingga tidak sepenuhnya global. Untuk kebutuhan produksi, pertimbangkan store eksternal seperti Upstash Redis.
+- Bila frontend dan API berada di domain berbeda, cookie memakai `SameSite=None; Secure`. Safari/ITP dapat memblokir third-party cookie — paling aman menaruh frontend dan API pada satu site (mis. `app.domain.com` dan `api.domain.com`).
+
 ## Struktur Project
 
 ```
 src/
-├── index.ts            # Entry point — mount semua module & plugin
+├── index.ts            # Definisi app Elysia + default export (entry untuk Vercel)
+├── serve.ts            # Menjalankan server lokal (app.listen)
 ├── db/
 │   ├── index.ts        # Koneksi Drizzle + relasi
 │   ├── schema.ts       # Seluruh tabel (users, wallets, transactions, ...)

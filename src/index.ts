@@ -10,10 +10,16 @@ import { budgetsModules } from "./modules/budgets";
 import { reportModules } from "./modules/reports";
 import cors from "@elysiajs/cors";
 
+// Origin frontend yang diizinkan, pisahkan dengan koma.
+// Contoh: http://localhost:5173,https://duitku.vercel.app
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+  : true;
+
 const app = new Elysia({ prefix: "/api" })
   .use(
     cors({
-      origin: 'http://localhost:5173',
+      origin: allowedOrigins,
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization'],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -32,9 +38,8 @@ const app = new Elysia({ prefix: "/api" })
     return {
       status: "ok"
     }
-  })
-  .listen(3000);
+  });
 
-console.log(
-  `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`
-);
+// Vercel mendeteksi Elysia lewat default export ini.
+// app.listen() tidak boleh dipanggil di sini — lihat src/serve.ts untuk lokal.
+export default app;
