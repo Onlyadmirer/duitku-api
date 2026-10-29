@@ -15,7 +15,7 @@ export const authGuard = new Elysia({ name: "auth-guard" })
 
     const isTokenValid = await accessJwt.verify(token.toString())
 
-    if (!isTokenValid) {
+    if (!isTokenValid || typeof isTokenValid.id !== "string") {
       return status(401, {
         message: "Token invalid"
       })

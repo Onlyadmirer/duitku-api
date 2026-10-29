@@ -18,10 +18,10 @@
     "drizzle-orm": "^1.0.0-rc.4",
     "elysia": "latest",
     "elysia-rate-limit": "4.6.2",
-    "postgres": "^3.4.9"
+    "postgres": "^3.4.9",
+    "bun-types": "latest"
   },
   "devDependencies": {
-    "bun-types": "latest",
     "drizzle-kit": "^1.0.0-rc.4"
   },
   "module": "src/index.js"
