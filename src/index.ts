@@ -9,6 +9,7 @@ import { transactionModules } from "./modules/transaction";
 import { walletModules } from "./modules/wallet";
 import { budgetsModules } from "./modules/budgets";
 import { reportModules } from "./modules/reports";
+import { exportModules } from "./modules/export";
 import cors from "@elysiajs/cors";
 
 // Origin frontend yang diizinkan, pisahkan dengan koma.
@@ -35,6 +36,7 @@ const app = new Elysia({ prefix: "/api" })
   .use(walletModules)
   .use(budgetsModules)
   .use(reportModules)
+  .use(exportModules)
   .get("/cronjob", () => {
     return {
       status: "ok"
